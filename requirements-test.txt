@@ -1,0 +1,11 @@
+# Minimal set to run the pipeline and the tests (CPU only).
+# The full research environment, including NeuralForecast for the
+# notebook models, is in requirements.txt / environment.yml.
+tensorflow-cpu==2.17.*
+numpy
+pandas
+scipy
+scikit-learn
+xgboost
+matplotlib
+pytest

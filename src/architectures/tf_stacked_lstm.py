@@ -1,6 +1,6 @@
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
-    Input, GRU, Dropout, LayerNormalization,
+    Input, LSTM, Dropout, LayerNormalization,
     Concatenate, Dense, GlobalAveragePooling1D
 )
 from tensorflow.keras.optimizers import Adam
