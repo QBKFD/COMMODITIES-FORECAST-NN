@@ -79,7 +79,7 @@ def rmse_dotplot(summary: pd.DataFrame, preds: pd.DataFrame, path: Path) -> Path
             seeds = preds[(preds.commodity == com) & (preds.model == m)]
             if seeds.seed.nunique() > 1:
                 per = seeds.groupby("seed").apply(
-                    lambda g: (np.sqrt(np.mean((g.y_true - g.y_pred) ** 2)) * 1e4 / zero - 1) * 100,
+                    lambda g, zero=zero: (np.sqrt(np.mean((g.y_true - g.y_pred) ** 2)) * 1e4 / zero - 1) * 100,
                     include_groups=False,
                 )
                 ax.hlines(yi, per.min(), per.max(), color=_color(m), alpha=0.35, linewidth=3)

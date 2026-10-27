@@ -107,7 +107,7 @@ def summarise(preds: pd.DataFrame, by_year: bool) -> pd.DataFrame:
             rows.append(b)
     out = pd.DataFrame(rows)
     out["rmse_vs_zero_pct"] = 0.0
-    for key, g in out.groupby(group_keys):
+    for _, g in out.groupby(group_keys):
         zero = g.loc[g.model == "zero", "rmse_bp"].iloc[0]
         out.loc[g.index, "rmse_vs_zero_pct"] = (g.rmse_bp / zero - 1) * 100
     order = {m: i for i, m in enumerate(MODEL_ORDER + ["zero", "mean", "up"])}
