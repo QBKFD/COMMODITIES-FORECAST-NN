@@ -206,3 +206,15 @@ def daily_event_features(dates: pd.DatetimeIndex, commodity: str, events: pd.Dat
     first_event = ts.min()
     out["calendar_covered"] = (settle >= first_event).astype(float)
     return out
+
+
+EVENT_COLUMNS = [*(f"z_{g}" for g in SURPRISE_GROUPS), *(f"next_{g}" for g in FLAG_GROUPS)]
+
+
+def add_event_features(df: pd.DataFrame, commodity: str, events: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Return ``df`` with the event columns added (dates outside the calendar get zeros)."""
+    feats = daily_event_features(pd.DatetimeIndex(df.index), commodity, events)
+    out = df.copy()
+    for col in EVENT_COLUMNS:
+        out[col] = feats[col].to_numpy()
+    return out
