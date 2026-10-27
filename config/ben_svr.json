@@ -1,7 +1,7 @@
 {
   "model": "benchmarks",
   "benchmark_type": "svr",
-  "C": 1.0,
+  "C": 0.1,
   "epsilon": 0.1,
   "kernel": "rbf",
   "gamma": "scale",

@@ -18,7 +18,7 @@
   "attention_heads": 4,
   "dropout": 0.2,
   "dense_units": 64,
-  "learning_rate": 0.001,
+  "learning_rate": 0.0005,
   "price_features": [
     "log_return",
     "log_return_lag1",
