@@ -1,43 +1,67 @@
 {
-  "dataset": "data/gold_fixed_auto.csv",
   "lookback": 30,
   "horizon": 1,
-  "epochs": 25,
+  "epochs": 40,
   "batch_size": 32,
-  "years": [2020, 2021, 2022, 2023, 2024],
-
+  "patience": 6,
+  "years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "loss": "huber",
+  "weight_decay": 0.0001,
+  "units": 64,
+  "d_model": 32,
+  "attention_heads": 4,
+  "dropout": 0.2,
+  "dense_units": 64,
+  "learning_rate": 0.001,
   "price_features": [
-    "Open", "High", "Close", "Low", "Volume",
-    "SMA_7", "SMA_30", "RSI_14", "MACD",
-    "BB_Width", "Volume_Zscore",
-    "log_return", "log_return_lag1", "log_return_lag2",
-    "rolling_vol_5", "rolling_vol_20",
-    "abs_return", "intraday_range", "ATR_14",
-    "trend_up", "strong_momentum", "pos_in_range"
+    "log_return",
+    "log_return_lag1",
+    "log_return_lag2",
+    "open_gap",
+    "hl_range",
+    "close_in_range",
+    "ret_5",
+    "ret_20",
+    "dist_sma7",
+    "dist_sma30",
+    "macd_pct",
+    "atr_pct",
+    "bb_width_pct",
+    "RSI_14",
+    "pos_in_range",
+    "trend_up",
+    "strong_momentum",
+    "rolling_vol_5",
+    "rolling_vol_20",
+    "abs_ret",
+    "Volume_Zscore"
   ],
-
   "macro_features": [
-    "Fed_Funds_Rate", "CPI", "Unemployment_Rate", "M2", "M1", "IPI",
-    "Consumer_Sentiment", "1Y_Treasury_Rate", "GDP_Quarterly", "Balance_Trade", "SP500_Close",
-    "SP500_log_return", "SP500_SMA_30", "SP500_RSI_14", "DXY_Close",
-    "DXY_Log_Return", "VIX_Close", "GPRD", "GPRD_ACT",
-    "GPRD_THREAT", "GPRD_MA7", "GPRD_MA30"
-  ],
-
-  "units_price_1": 64,
-  "units_price_2": 32,
-  "units_price_3": 16,
-
-  "macro_attention_dim": 16,
-  "macro_attention_heads": 4,
-
-  "fused_dense_units_1": 64,
-  "fused_dense_units_2": 32,
-
-  "dropout_price": 0.1,
-  "dropout_macro": 0.1,
-  "dropout_fused": 0.05,
-
-  "loss": "mse",
-  "learning_rate": 0.0005
+    "Fed_Funds_chg",
+    "T1Y_chg",
+    "Unemployment_chg",
+    "Consumer_Sentiment",
+    "CPI_yoy",
+    "M2_yoy",
+    "IPI_yoy",
+    "GDP_yoy",
+    "Balance_Trade_yoy",
+    "SP500_log_return",
+    "SP500_dist_sma30",
+    "SP500_RSI_14",
+    "DXY_Log_Return",
+    "DXY_dist_60",
+    "VIX_Close",
+    "VIX_change",
+    "GPRD_log",
+    "GPRD_ACT_log",
+    "GPRD_THREAT_log",
+    "GPRD_MA30_log"
+  ]
 }
