@@ -122,7 +122,8 @@ def da_dotplot(summary: pd.DataFrame, path: Path) -> Path:
                 ax.annotate("*", (row.directional_accuracy, yi), xytext=(5, -2), textcoords="offset points",
                             fontsize=11, color=INK)
         ax.set_title(com, fontsize=10)
-        ax.set_xlim(0.44, 0.58)
+        vals = [s.loc[m, "directional_accuracy"] for m in models] + [up, 0.5 - band, 0.5 + band]
+        ax.set_xlim(min(vals) - 0.01, max(vals) + 0.015)
         ax.set_ylim(-0.7, len(models) + 0.6)
         ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
         ax.grid(axis="x", color=GRID, linewidth=0.8)

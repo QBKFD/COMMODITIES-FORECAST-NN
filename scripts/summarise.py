@@ -82,6 +82,8 @@ def baselines(days: pd.DataFrame) -> list[dict]:
         ("up", np.full(len(days), 1e-6)),
     ]:
         row = forecast_metrics(days.y_true, pred)
+        if name == "zero":
+            row["directional_accuracy"] = float("nan")  # predicts no direction
         if name == "mean":
             row["dm_stat"], row["dm_p"] = diebold_mariano(days.y_true, pred, np.zeros(len(days)))
         row["model"] = name
