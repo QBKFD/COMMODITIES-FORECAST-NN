@@ -73,6 +73,8 @@ def rmse_dotplot(summary: pd.DataFrame, preds: pd.DataFrame, path: Path) -> Path
         zero = s.loc["zero", "rmse_bp"]
         ax.axvline(0, color=INK_3, linewidth=1, linestyle=(0, (4, 3)))
         for yi, m in zip(y, models, strict=True):
+            if m not in s.index:
+                continue
             v = s.loc[m, "rmse_vs_zero_pct"]
             seeds = preds[(preds.commodity == com) & (preds.model == m)]
             if seeds.seed.nunique() > 1:
@@ -115,6 +117,8 @@ def da_dotplot(summary: pd.DataFrame, path: Path) -> Path:
         ax.axvline(up, color=INK_2, linewidth=1.2)
         ax.text(up, len(models) - 0.35, f" always up\n {up:.1%}", fontsize=7.5, color=INK_2, va="bottom")
         for yi, m in zip(y, models, strict=True):
+            if m not in s.index:
+                continue
             row = s.loc[m]
             ax.scatter(row.directional_accuracy, yi, s=40, color=_color(m), zorder=3,
                        edgecolor=SURFACE, linewidth=1.2)
@@ -122,7 +126,7 @@ def da_dotplot(summary: pd.DataFrame, path: Path) -> Path:
                 ax.annotate("*", (row.directional_accuracy, yi), xytext=(5, -2), textcoords="offset points",
                             fontsize=11, color=INK)
         ax.set_title(com, fontsize=10)
-        vals = [s.loc[m, "directional_accuracy"] for m in models] + [up, 0.5 - band, 0.5 + band]
+        vals = [s.loc[m, "directional_accuracy"] for m in models if m in s.index] + [up, 0.5 - band, 0.5 + band]
         ax.set_xlim(min(vals) - 0.01, max(vals) + 0.015)
         ax.set_ylim(-0.7, len(models) + 0.6)
         ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
