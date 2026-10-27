@@ -1,0 +1,4 @@
+commodity,n_days,n_event_days,rmse_mean_bp,rmse_har_bp,rmse_har_events_bp,har_vs_mean_pct,dm_p_har_better,events_vs_har_pct,dm_p_events_better,dm_p_events_better_event_days,events_vs_har_event_days_pct,events_vs_har_other_days_pct,mean_abs_return_event_days_bp,mean_abs_return_other_days_bp
+gold,1235,157,71.769,70.105,69.692,-2.319,0.021,-0.589,0.199,0.193,-3.346,0.010,91.416,71.240
+silver,1235,157,154.509,148.937,148.156,-3.606,0.002,-0.524,0.170,0.117,-3.896,0.148,175.953,147.363
+copper,1236,157,99.956,98.167,97.975,-1.790,0.003,-0.195,0.160,0.108,-1.644,0.053,128.747,114.385

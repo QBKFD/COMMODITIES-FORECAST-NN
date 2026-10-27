@@ -1,0 +1,13 @@
+commodity,group,days_with_release,same_day_bp,same_day_t,next_day_bp,next_day_t
+gold,cpi,149,-14.371,-2.146,5.175,0.737
+gold,nfp,171,-39.231,-5.324,-0.492,-0.059
+gold,usd_other,1745,-6.262,-1.907,-0.661,-0.222
+gold,china_pmi,241,-3.831,-0.492,-5.229,-0.472
+silver,cpi,149,-22.487,-2.425,21.023,1.140
+silver,nfp,171,-38.764,-2.712,-4.374,-0.297
+silver,usd_other,1752,-6.532,-1.134,-7.941,-1.556
+silver,china_pmi,241,6.948,0.563,-4.519,-0.290
+copper,cpi,149,-11.733,-1.547,-21.252,-1.704
+copper,nfp,171,21.052,2.557,-6.061,-0.884
+copper,usd_other,1752,0.140,0.039,-5.056,-1.367
+copper,china_pmi,241,26.739,2.474,-10.309,-1.107

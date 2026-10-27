@@ -23,6 +23,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from src.features import add_features
+
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
 COMMODITIES = {
@@ -104,7 +106,7 @@ def load_commodity(name: str, data_dir: str | Path | None = None) -> pd.DataFram
     df[TARGET] = np.log(df["Close"].shift(-1) / df["Close"])
     # The original next-day dollar change; kept only for comparison.
     df = df.drop(columns=["y", "unique_id"], errors="ignore")
-    return df
+    return add_features(df)
 
 
 def make_windows(

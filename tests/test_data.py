@@ -54,3 +54,34 @@ def test_windows_end_on_forecast_day():
     assert X.shape == (8, 3, 1)
     assert X[0, :, 0].tolist() == [0, 1, 2] and y[0] == 20 and ends[0] == 2
     assert X[-1, -1, 0] == 9 and y[-1] == 90
+
+
+def test_stationary_features_have_no_look_ahead():
+    """Features on day t must not change when later prices change."""
+    import numpy as np
+    import pandas as pd
+
+    from src.data import load_commodity
+    from src.features import MACRO_FEATURES, PRICE_FEATURES
+
+    df = load_commodity("gold")
+    cols = PRICE_FEATURES + MACRO_FEATURES
+    cut = df.index[3000]
+    from src.features import add_features
+
+    # add_features recomputes every derived column from the raw ones
+    full = add_features(df)
+    early = add_features(df.loc[:cut])
+    pd.testing.assert_frame_equal(full.loc[:cut, cols], early[cols])
+    assert not np.isinf(full[cols].to_numpy(float)).any()
+
+
+def test_features_are_stable_across_decades():
+    """Price-level columns drift with the price; the model inputs should not."""
+    from src.data import load_commodity
+    from src.features import PRICE_FEATURES
+
+    f = load_commodity("gold")[PRICE_FEATURES].dropna()
+    train, test = f.loc[:"2019"], f.loc["2024"]
+    z = ((test.mean() - train.mean()) / train.std()).abs()
+    assert z.max() < 1.5, z.sort_values().tail(3)
