@@ -8,3 +8,5 @@ output/shap/
 
 # Raw economic-calendar exports (not redistributable)
 data/calendar_raw/
+.venv/
+*.log
