@@ -38,6 +38,11 @@ economic-calendar study to understand why the forecasts fail.
    stacked GRU gets copper's sign right on 55.3% of days (Holm-adjusted
    p = 0.004), but trading it gives a Sharpe ratio that is not significantly
    above zero (p = 0.08) and is negative in 2022 and 2024.
+6. **Neural networks do not beat HAR on volatility either, though a
+   Transformer comes closest.** In a comparison designed before it was run,
+   no model forecasts next-day variance significantly better than HAR
+   (lowest p = 0.12). The Transformer scores best on gold and silver, mostly
+   by raising its forecast on release days, which HAR cannot see coming.
 
 Put together: news arrives through scheduled releases and is priced on the
 same day, so a model that forecasts tomorrow from today's data has very
@@ -58,6 +63,7 @@ Everything below uses the corrected pipeline and was done after the thesis:
 | Fix look-ahead and evaluation, add naive baselines, significance tests and unit tests | PR #2, first corrected results in [`output/fixed_evaluation/`](output/fixed_evaluation) |
 | Economic-calendar surprise features and the with/without-events ablation | PR #3 |
 | Stationary inputs, revised architectures, tuning on validation years, full rerun, event study, volatility, robustness checks | PR #4 |
+| Volatility models: HAR, GARCH, LSTM, Transformer and pretrained foundation models, designed before running | PR #5 |
 
 ## 1. Macro surprises move metals on the release day
 
@@ -232,6 +238,77 @@ from, and ignores roll costs, slippage, margin and financing. Tables:
 [`backtest_copper_gru_by_year.csv`](output/results/backtest_copper_gru_by_year.csv).
 Script: [`scripts/robustness.py`](scripts/robustness.py).
 
+## 6. Volatility models: can a network beat HAR?
+
+Volatility is where these inputs carry signal, so it is the fair test for
+the neural networks. The target, models, training settings and tests were
+written down and committed in
+[`docs/volatility_design.md`](docs/volatility_design.md) before any model was
+run. Two changes made along the way are recorded there with their reasons.
+
+Every model forecasts the variance of the next day's return, and the target
+is the squared return. The test years are the same, and every model is refit
+each year on data from March 2010. Forecasts are scored with QLIKE, which
+ranks forecasts correctly even though a squared return is a very noisy
+measure of variance, and which punishes forecasting too little risk more
+than too much. The networks (LSTM and Transformer, three seeds averaged)
+get a 22-day window of returns, the high-low range, rolling volatility,
+ATR, VIX and the release flags, and are trained on QLIKE directly. HAR-X
+gives HAR the same extra inputs in a linear model.
+
+QLIKE minus HAR's (negative beats HAR), with the one-sided Diebold-Mariano
+p-value against HAR:
+
+| Model | Gold | Silver | Copper |
+|---|---:|---:|---:|
+| Historical mean | +0.070 (0.94) | +0.127 (0.96) | +0.050 (0.99) |
+| EWMA (λ = 0.94) | +0.030 (0.95) | +0.011 (0.65) | +0.018 (0.93) |
+| GARCH(1,1) | +0.009 (0.75) | -0.011 (0.37) | +0.004 (0.62) |
+| GJR-GARCH | +0.008 (0.71) | -0.002 (0.48) | +0.021 (0.91) |
+| HAR-X | -0.002 (0.48) | -0.016 (0.33) | +0.006 (0.61) |
+| LSTM | +0.025 (0.75) | +0.010 (0.60) | +0.033 (0.88) |
+| Transformer | **-0.024** (0.19) | **-0.040** (0.12) | +0.018 (0.77) |
+| *HAR (reference QLIKE)* | -8.215 | -6.748 | -7.392 |
+
+- **Nothing beats HAR significantly.** The smallest p-value is 0.12, before
+  any correction for the 21 comparisons. Every model, the historical mean
+  included, is in the 90% Model Confidence Set for every metal.
+- **The Transformer comes closest.** It has the lowest QLIKE on gold and
+  silver and ranks first in their confidence sets, but is worse than HAR on
+  copper. The edge is fragile: single seeds beat HAR in two of three runs on
+  gold and silver, and by year it beats HAR in 2021-2023 and loses in 2020
+  and 2024.
+- **The LSTM is worse than HAR on all three metals.**
+- **HAR-X does not improve on HAR.** I expected the high-low range to help
+  and wrote that down beforehand. It did not.
+- **Release days are where the networks differ.** On the 157 release days
+  the Transformer's QLIKE is lower than HAR's by 0.25 on gold (p = 0.06) and
+  0.32 on silver (p = 0.02), and close to HAR's on the other days. HAR has no
+  way of knowing a release is coming, so it forecasts too little risk on
+  those days. The networks see the flags and are trained on a loss that
+  punishes that. HAR-X has the same flags but is fitted by least squares,
+  and does not gain. The breakdown was planned, but it is one of many
+  comparisons and does not survive a correction, so it is a lead for now.
+
+![QLIKE relative to HAR](output/figures/vol_qlike_vs_har.png)
+
+![Gold volatility forecasts, 2020](output/figures/vol_gold_2020.png)
+
+The second figure shows the release-day effect: in calm markets the
+Transformer's forecast jumps on release days, while HAR and GARCH stay flat.
+
+The honest summary is that five years of daily data cannot separate good
+volatility models. The confidence intervals in the first figure are wider
+than the differences between the models. Realised variance from intraday
+returns is a far less noisy target and would make this comparison much
+sharper. Pretrained foundation models (Chronos-Bolt, zero-shot) are in
+[`scripts/foundation_vol.py`](scripts/foundation_vol.py); they need the
+model weights from Hugging Face, and their results will be added here.
+
+Tables: [`output/volatility/results/`](output/volatility/results).
+Scripts: [`run_volatility.py`](scripts/run_volatility.py),
+[`vol_evaluate.py`](scripts/vol_evaluate.py).
+
 ## What changed since the thesis
 
 ### Evaluation fixes (PR #2)
@@ -300,16 +377,19 @@ worse than they were.
   do not expect this to change the conclusions.
 - The backtest is a test of whether the forecast sign is worth anything,
   not a trading strategy (see the assumptions in section 5).
+- In section 6 the networks are trained on QLIKE while HAR and HAR-X are
+  fitted by least squares, so part of any difference may come from the loss
+  rather than the model.
 
 ## Next steps
 
-- **Volatility models.** Compare HAR, GARCH, LSTM and Transformer models,
-  and pretrained time-series foundation models (Chronos, TimesFM), on the
-  volatility target, scored with QLIKE and a Model Confidence Set against
-  HAR. This is the fair test of whether neural networks add anything here.
-- **Intraday event study.** With minute data the reaction to each release
-  can be measured over 5 to 60 minutes instead of a whole day, which gives
-  much sharper estimates.
+- **Intraday data.** With minute data the reaction to each release can be
+  measured over 5 to 60 minutes instead of a whole day, and realised
+  variance from 5-minute returns gives the volatility comparison in section
+  6 a much less noisy target.
+- **A fairer linear benchmark.** HAR estimated by minimising QLIKE instead
+  of least squares, to separate what the Transformer gains from its loss
+  function from what it gains from being a network.
 - **Out-of-sample check of copper direction** on 2025 data.
 - **Missing drivers:** real yields (10-year TIPS) for gold, futures term
   structure and CFTC positioning.
@@ -374,6 +454,11 @@ python scripts/summarise.py              # summary.csv, by_year.csv and figures
 python scripts/robustness.py             # multiple testing, Model Confidence Set, backtest
 python scripts/event_analysis.py         # event study and volatility
 
+# volatility models (about 15 minutes on two CPU cores)
+python scripts/run_volatility.py         # benchmarks, LSTM and Transformer
+python scripts/foundation_vol.py         # Chronos-Bolt, zero-shot (pip install chronos-forecasting)
+python scripts/vol_evaluate.py           # output/volatility/results and figures
+
 # optional
 python scripts/tune.py run && python scripts/tune.py select   # redo the tuning on 2018-2019
 
@@ -392,6 +477,7 @@ models, is in `environment.yml` (`conda env create -f environment.yml`).
 ├── config/                 hyperparameters and feature lists per model (tuned)
 ├── data/                   daily data for gold, silver, copper (2000-2024)
 │   └── events/             release times and standardised surprises (derived)
+├── docs/                   volatility study design, written before it was run
 ├── main.py                 train and evaluate one model
 ├── notebooks/              EDA, data preparation, NeuralForecast models
 ├── output/
@@ -399,6 +485,7 @@ models, is in `environment.yml` (`conda env create -f environment.yml`).
 │   ├── results/            all result tables
 │   ├── figures/
 │   ├── tuning/             validation scores of every candidate
+│   ├── volatility/         variance forecasts and results of section 6
 │   ├── fixed_evaluation/   first corrected run (PR #2), for comparison
 │   └── original_run/       output of the thesis version
 ├── scripts/                experiments, summaries, event study, robustness, tuning
@@ -408,6 +495,7 @@ models, is in `environment.yml` (`conda env create -f environment.yml`).
 │   ├── train_tf.py         walk-forward training
 │   ├── evaluation.py       metrics, baselines, Diebold-Mariano, Pesaran-Timmermann, Holm and BH
 │   ├── events.py           economic-calendar surprises and release flags
+│   ├── volatility.py       variance models for section 6
 │   ├── architectures/      the models
 │   └── plotting.py
 └── tests/
