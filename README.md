@@ -43,6 +43,8 @@ economic-calendar study to understand why the forecasts fail.
    no model forecasts next-day variance significantly better than HAR
    (lowest p = 0.12). The Transformer scores best on gold and silver, mostly
    by raising its forecast on release days, which HAR cannot see coming.
+   Pretrained Chronos-Bolt models, used zero-shot, do worse than HAR on all
+   three metals.
 
 Put together: news arrives through scheduled releases and is priced on the
 same day, so a model that forecasts tomorrow from today's data has very
@@ -268,10 +270,12 @@ p-value against HAR:
 | HAR-X | -0.002 (0.48) | -0.016 (0.33) | +0.006 (0.61) |
 | LSTM | +0.025 (0.75) | +0.010 (0.60) | +0.033 (0.88) |
 | Transformer | **-0.024** (0.19) | **-0.040** (0.12) | +0.018 (0.77) |
+| Chronos-Bolt small, scaled | +0.105 (0.98) | +0.109 (0.94) | +0.065 (1.00) |
+| Chronos-Bolt base, scaled | +0.076 (0.99) | +0.080 (0.98) | +0.023 (0.93) |
 | *HAR (reference QLIKE)* | -8.215 | -6.748 | -7.392 |
 
 - **Nothing beats HAR significantly.** The smallest p-value is 0.12, before
-  any correction for the 21 comparisons. Every model, the historical mean
+  any correction for the 33 comparisons. Every model, the historical mean
   included, is in the 90% Model Confidence Set for every metal.
 - **The Transformer comes closest.** It has the lowest QLIKE on gold and
   silver and ranks first in their confidence sets, but is worse than HAR on
@@ -279,6 +283,17 @@ p-value against HAR:
   gold and silver, and by year it beats HAR in 2021-2023 and loses in 2020
   and 2024.
 - **The LSTM is worse than HAR on all three metals.**
+- **Pretrained foundation models do worse than HAR, and worse than EWMA.**
+  Chronos-Bolt sees only the last 512 squared returns and is not trained on
+  these data. Its median forecast, used as it comes out of the library, is
+  far too low for a variance (QLIKE worse than HAR by 1.0 to 2.3), so it is
+  rescaled with one factor per year estimated on training days (3.2 to 4.7,
+  more than the 2.2 a normal distribution would need, because of fat
+  tails). Even rescaled, the base model is significantly worse than HAR on
+  gold and silver (its 95% interval in the figure lies right of zero). The
+  larger base model beats the small one on every metal. Its timing of
+  volatility is roughly as good as a simple exponential average, nothing
+  more.
 - **HAR-X does not improve on HAR.** I expected the high-low range to help
   and wrote that down beforehand. It did not.
 - **Release days are where the networks differ.** On the 157 release days
@@ -301,9 +316,10 @@ The honest summary is that five years of daily data cannot separate good
 volatility models. The confidence intervals in the first figure are wider
 than the differences between the models. Realised variance from intraday
 returns is a far less noisy target and would make this comparison much
-sharper. Pretrained foundation models (Chronos-Bolt, zero-shot) are in
-[`scripts/foundation_vol.py`](scripts/foundation_vol.py); they need the
-model weights from Hugging Face, and their results will be added here.
+sharper. The Chronos forecasts come from
+[`scripts/foundation_vol.py`](scripts/foundation_vol.py), run on a laptop
+because the weights download from Hugging Face; the unscaled median
+versions are in the result tables too.
 
 Tables: [`output/volatility/results/`](output/volatility/results).
 Scripts: [`run_volatility.py`](scripts/run_volatility.py),
