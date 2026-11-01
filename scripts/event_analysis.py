@@ -31,7 +31,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.data import COMMODITIES, load_commodity  # noqa: E402
-from src.evaluation import diebold_mariano  # noqa: E402
+from scipy.stats import norm  # noqa: E402
+
+from src.evaluation import bh_adjust, diebold_mariano  # noqa: E402
 from src.events import FLAG_GROUPS, SURPRISE_GROUPS, add_event_features  # noqa: E402
 
 START = "2010-03-01"
@@ -77,7 +79,13 @@ def event_study(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
                     "same_day_bp": b0, "same_day_t": t0, "next_day_bp": b1, "next_day_t": t1,
                 }
             )  # fmt: skip
-    return pd.DataFrame(rows)
+    es = pd.DataFrame(rows)
+    # Two-sided p-values from the HAC t-statistics, then Benjamini-Hochberg across
+    # all release x commodity pairs, separately for the same-day and next-day tests.
+    for col in ("same_day", "next_day"):
+        es[f"{col}_p"] = 2 * norm.sf(es[f"{col}_t"].abs())
+        es[f"{col}_q_bh"] = bh_adjust(es[f"{col}_p"])
+    return es
 
 
 def volatility(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
