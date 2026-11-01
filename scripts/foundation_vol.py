@@ -43,8 +43,11 @@ def median_forecasts(pipeline, r2_full: pd.Series, dates: pd.DatetimeIndex, batc
     out = np.empty(len(dates))
     for i in range(0, len(dates), batch):
         ctx = [torch.tensor(values[max(0, p - CONTEXT + 1) : p + 1]) for p in pos[i : i + batch]]
-        q, _ = pipeline.predict_quantiles(context=ctx, prediction_length=1, quantile_levels=[0.5])
-        out[i : i + batch] = q[:, 0, 0].float().numpy()
+        # positional: the argument is `context` in chronos-forecasting 1.x and `inputs` in 2.x
+        q, _ = pipeline.predict_quantiles(ctx, prediction_length=1, quantile_levels=[0.5])
+        if not isinstance(q, torch.Tensor):
+            q = torch.stack([torch.as_tensor(x) for x in q])
+        out[i : i + batch] = q.reshape(len(ctx), -1)[:, 0].float().numpy()
     return np.maximum(out, FLOOR)
 
 
