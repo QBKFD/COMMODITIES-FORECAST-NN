@@ -38,7 +38,7 @@ networks add anything is on volatility, where there is something to learn:
 | Transformer | same inputs, linear embedding to 32 with positional encoding, two encoder blocks (4 heads, feed-forward 64, dropout 0.1), last time step, dense layer of 16, output log h |
 | Chronos-Bolt small, base | pretrained foundation models, zero-shot: context of the last 512 squared returns, mean forecast; no training on these data |
 
-Network inputs per day: log return, absolute return, high-low range,
+Network inputs per day: log return, absolute return (both from closing prices), high-low range,
 5- and 20-day rolling volatility, ATR as a share of price, VIX and its
 change, and the three release flags. Scaled with statistics from the
 training window only and clipped at 5 standard deviations.
@@ -66,6 +66,40 @@ All forecasts are floored at 1e-8 (a daily volatility of 0.01%).
 - Model Confidence Set (90%, T_max, block bootstrap) on QLIKE per metal,
   over all models.
 - Breakdowns by test year and for release days against other days.
+
+## Amendment, 1 November 2026 (after the first benchmark run, before any network was trained)
+
+HAR-X as specified above forecast a negative variance on 3 of 1,235 gold
+test days (2021-06-17, 2023-12-14, 2024-07-25). The floor turned these into
+forecasts of almost zero risk, and on those three days QLIKE explodes: the
+mean QLIKE of gold HAR-X was +5.71 against about -8.2 for every other model,
+or -8.216 without those days. This is a known weakness of linear variance
+models, and the usual fix is an "insanity filter": a negative forecast from
+HAR or HAR-X is replaced by the training-window mean of r². No other model
+and no other day is affected. Both versions of the number are kept here.
+
+A related consistency fix in the same run: returns are now computed from
+the closing prices, the same way as the target. The precomputed log return
+column in the data file disagrees with the closing prices on one gold
+training day (2013-09-02). The benchmark numbers above were rerun with this
+change; HAR-X on gold moved from -8.2166 to -8.2169.
+
+## Amendment, 1 November 2026 (before the foundation models were run)
+
+Chronos-Bolt predicts quantiles only, and the "mean" its library returns is
+the median. Squared returns are very skewed: for a normal return the median
+of r² is about 0.45 times its mean. Taking the median as the variance
+forecast would understate risk by about half and lose on QLIKE for a reason
+that has nothing to do with the model. So each Chronos-Bolt model is
+reported twice:
+
+- `chronos_bolt_*_median`: the median forecast as returned (the closest
+  thing to the original plan).
+- `chronos_bolt_*`: the median times one scale factor per test year,
+  c = mean(r² / median forecast) over the training days, which is the
+  QLIKE-optimal constant. It uses training data only, like the HAR
+  coefficients. The models are still zero-shot: their weights are never
+  trained on these data.
 
 ## What I expect
 
