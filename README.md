@@ -1,105 +1,173 @@
-#  Commodities Forecasting using Neural Networks
+# Commodities forecasting with neural networks
 
-This repository contains the full implementation of my Master's thesis:  
-**"Forecasting Commodity Markets Using Neural Networks: A Quantitative Study Using Engineered Inputs and Deep Learning Architectures."**
+[![tests](https://github.com/QBKFD/COMMODITIES-FORECAST-NN/actions/workflows/tests.yml/badge.svg)](https://github.com/QBKFD/COMMODITIES-FORECAST-NN/actions/workflows/tests.yml)
 
-The project explores the use of deep learning architectures—including LSTM, GRU, Transformer-based models, and hybrid variants—for **1-day ahead forecasting** of major commodities: **Gold**, **Silver**, and **Copper**.
+Code for my Master's thesis, *Forecasting Commodity Markets Using Neural
+Networks: A Quantitative Study Using Engineered Inputs and Deep Learning
+Architectures*.
 
+The models forecast the next-day return of **gold**, **silver** and
+**copper** from two inputs: a 30-day window of market features (prices,
+technical indicators, volatility) and a window of macro and cross-market
+features (rates, inflation, money supply, S&P 500, dollar index, VIX,
+geopolitical risk). Recurrent networks, attention-based hybrids and a
+Transformer are compared with XGBoost, random forest and SVR, and with the
+naive forecasts every daily-return model has to beat.
 
-##  Key Contributions
+## Results
 
--  **Custom Feature Engineering**: Created from raw market data and enriched with macroeconomic and geopolitical indicators
--  **Dual-Input Model Design**: Combines sequential price data with static macro/sentiment features across multiple architectures
--  Evaluates a **wide variety of architectures**, including Transformer-based models (Autoformer, Informer), recurrent networks (LSTM, GRU), and hybrid variants (e.g., TFT+GRU)
--  Walk-forward validation for robust out-of-sample performance
--  Comprehensive evaluation using RMSE, MAE, and Directional Accuracy
+Walk-forward evaluation over 2020-2024: each year is forecast by models
+trained only on earlier data, one day ahead, every trading day. Neural
+networks use the average forecast of three seeds.
 
+| Model | Gold ΔRMSE | Gold DA | Silver ΔRMSE | Silver DA | Copper ΔRMSE | Copper DA |
+|---|---:|---:|---:|---:|---:|---:|
+| Stacked LSTM | +1.3% | 53.5% | +0.8% | 48.3% | +0.9% | 48.5% |
+| Stacked GRU | +0.3% | 51.3% | +1.0% | 48.1% | +0.2% | 49.1% |
+| LSTM + attention | +0.4% | 48.2% | +0.7% | 47.6% | +0.4% | 48.7% |
+| GRU + attention | -0.02% | 52.5% | +0.3% | 48.9% | +0.9% | 49.8% |
+| Transformer | +1.6% | 45.3% | +0.6% | 48.5% | +2.1% | 48.8% |
+| XGBoost | +3.0% | 49.2% | +0.3% | 49.6% | +0.1% | 53.1%\* |
+| Random forest | +4.8% | 47.6% | +0.1% | 48.7% | +0.1% | 52.7%\* |
+| SVR | +2.7% | 51.1% | +1.1% | 49.3% | +3.3% | 49.5% |
+| *Training mean* | -0.1% | 54.8% | -0.01% | 51.8% | -0.01% | 51.5% |
+| *Always up* | – | 54.8% | – | 51.8% | – | 51.5% |
+| *Zero change (reference)* | 103 bp | – | 215 bp | – | 153 bp | – |
 
-##  Feature Categories
+ΔRMSE is the root mean squared error relative to forecasting a return of zero
+(a random walk in prices); negative means better. DA is the share of days
+with the correct sign; "always up" is the DA of always predicting a rise.
+† Diebold-Mariano p < 0.05 against the zero forecast. \* Pesaran-Timmermann
+p < 0.05 (the predicted signs carry information). Full tables, including
+per-year results and test statistics, are in
+[`output/results/`](output/results).
 
-###  Market-Based Features
-Derived directly from daily OHLCV data and include a range of technical indicators, trend signals, and return-based calculations.
+![RMSE relative to the zero-change forecast](output/figures/rmse_vs_zero.png)
 
-###  Macroeconomic Indicators
-Selected variables from the Federal Reserve Economic Database (FRED) such as interest rates, CPI, unemployment, GDP, and monetary aggregates.
+Single networks do worse than their average: the bars (single seeds) often
+sit entirely to the right of the dot (the mean forecast of the three seeds).
+Averaging pulls the forecasts towards zero, which here is the safest guess,
+so results from one training run overstate the error and also the
+differences between architectures.
 
-###  External Financial & Geopolitical Indicators
-Market indices, volatility measures, and geopolitical risk indicators sourced from Yahoo Finance and the Geopolitical Risk Index (GPR).
+What the numbers say:
 
-##  Models Implemented
+- **No model meaningfully beats "no change".** One of the 24 model-metal combinations has
+  a lower RMSE than the zero forecast over 2020-2024 (GRU + attention on gold, -0.02%),
+  and none significantly (Diebold-Mariano, 5%). The worst is +4.8% (Random forest on
+  gold). Year by year, a model beats the zero forecast in 24 of 120 cases.
+- **Direction is close to a coin flip.** Two of the 24 combinations
+  have predicted signs that carry significant information (Pesaran-Timmermann,
+  5%): Random forest on copper (52.7%, p = 0.003); XGBoost on copper (53.1%, p = 0.014). With 24 tests about one false positive is expected at that
+  level, so this is a lead to check on later data, not a result yet. Only
+  two of the 24 beat simply predicting a rise every day.
+- **No architecture wins.** The lowest RMSE belongs to GRU + attention on gold,
+  Random forest on silver and Random forest on copper. The neural networks are
+  -0.02% to +2.1% from the zero forecast in RMSE, the tree
+  ensembles +0.1% to +4.8%.
 
-- **Recurrent Architectures**: LSTM, GRU (dual-input designs)
-- **Transformer-Based Models**: Autoformer, Informer, PatchTST, TimesNet
-- **Hybrid Architectures**: TFT + LSTM/GRU, Pure Transformers (dual-input designs)
-- **Other Deep Learning Models**: NHITS (hierarchical CNN-based forecasting model)
-- **Benchmark Models**: SVR, XGBoost, Random Forest
-- 
-## Architectures
-![Model Architecture](data/arch_pic.png)
+This is the usual finding for daily returns of liquid markets, and a fair
+result for the thesis: with prices, technical indicators and monthly macro
+data, the next-day return is close to unpredictable.
 
+![Directional accuracy](output/figures/directional_accuracy.png)
 
-##  Evaluation Metrics
+## What changed in the evaluation
 
-- **Root Mean Squared Error (RMSE)**
-- **Mean Absolute Error (MAE)**
-- **Directional Accuracy (DA)**:
+The first version of this repository reported RMSE and directional accuracy
+without naive baselines, and the pipeline had several problems that made
+results look better or worse than they were. They are fixed here; the
+original output is kept in [`output/original_run/`](output/original_run).
 
-All models are evaluated using **walk-forward validation** across two time horizons(1 day and 7 days) and commodities.
+- **Macro data were used before they were published.** FRED dates every
+  value at the start of its period, so March CPI appeared on 1 March although
+  it was released mid-April, and quarterly GDP up to four months early. Each
+  monthly and quarterly series is now shifted by its usual publication lag
+  ([`src/data.py`](src/data.py)). S&P 500, dollar index, VIX and the
+  geopolitical risk index are lagged by one trading day, since US markets
+  close after the metal futures settle.
+- **The forecast was two days ahead.** The target column already held the
+  next-day change, and the input window stopped one day before it. Windows
+  now end on the forecast day.
+- **Scalers were fitted on 2000-2024**, including the test years. They are
+  now fitted inside each walk-forward fold on training data only.
+- **Early stopping watched the training loss.** It now monitors the last 15%
+  of each training window, held out as validation.
+- **The Transformer had no positional encoding**, so self-attention treated
+  the 30-day window as an unordered set. It now adds sinusoidal positions and
+  residual connections.
+- **Target in dollars.** Gold went from $280 to $2,700, so errors in different
+  years were not comparable. The target is now the log return.
+- **Smaller fixes:** the stacked LSTM imported `GRU` but called `LSTM`;
+  XGBoost ignored `subsample` and `colsample_bytree` from its config; SHAP
+  ran behind an interactive prompt that blocked batch runs (now `--shap`).
 
+## Models
+
+| Name in the code | Architecture |
+|---|---|
+| `stacked_lstm`, `stacked_gru` | three recurrent layers on the market window, two on the macro window, fused by dense layers |
+| `lstm_attention`, `gru_attention` | recurrent layers on the market window, self-attention on the macro window, then cross-attention from market to macro (formerly `tf_tft_*`; inspired by, but not, the Temporal Fusion Transformer) |
+| `transformer` | self-attention encoders with positional encoding on both windows, then cross-attention |
+| `xgboost`, `random_forest`, `svr` | on the flattened windows |
+
+The old model names (`tf_transformers`, `tf_hybrid_lstm`, ...) still work.
+The NeuralForecast models in `notebooks/notebook_nn_pyt.ipynb` (Informer,
+Autoformer, PatchTST, TimesNet, NHITS) and `main_nn.py` were not part of this
+rerun.
+
+## Running it
+
+```bash
+conda env create -f environment.yml && conda activate env_comm   # full environment
+pip install -r requirements-test.txt                             # or: just what this pipeline needs
+
+pytest                                                           # ~2 min
+
+# one model, one commodity, with per-year metrics next to the zero forecast
+python main.py --model transformer --config config/con_transformers.json --commodity gold --seeds 0 1 2
+
+# everything (about 5 hours on two CPU cores; resumable), then tables and figures
+python scripts/run_experiments.py
+python scripts/summarise.py
+```
+
+## Repository layout
 
 ```
-Commodities-Forecast-NN/
-├── config/ # Configuration JSONs for each model
-│ ├── con_gru.json
-│ ├── con_lstm.json
-│ ├── con_tft_gru.json
-│ ├── con_tft_lstm.json
-│ ├── con_transformers.json
-│ ├── ben_rf.json
-│ ├── ben_xgb.json
-│ └── ben_svr.json
-├── data/ #Commodities
-├── notebooks/ # Jupyter notebooks (EDA etc.)
-├── output/ # Generated metrics and plots
+├── config/                 hyperparameters and feature lists per model
+├── data/                   daily data for gold, silver, copper (2000-2024)
+├── main.py                 train and evaluate one model
+├── notebooks/              EDA, data preparation, NeuralForecast models
+├── output/
+│   ├── predictions/        daily forecasts per commodity, model and seed
+│   ├── results/            summary.csv, by_year.csv
+│   ├── figures/
+│   └── original_run/       output of the first version, for comparison
+├── scripts/                run_experiments.py, summarise.py
 ├── src/
-│ ├── architectures/ # All models
-│ │ ├── tf_stacked_gru.py
-│ │ ├── tf_stacked_lstm.py
-│ │ ├── tf_tft_gru.py
-│ │ ├── tf_tft_lstm.py
-│ │ ├── tf_transformers.py
-│ │ └── benchmarks.py
-│ └── train_tf.py, train_nn.py # Training scripts
-├── main.py # 
-└── requirements.txt # Dependencies
+│   ├── data.py             loading, release-date alignment, target
+│   ├── train_tf.py         walk-forward training
+│   ├── evaluation.py       metrics, baselines, Diebold-Mariano, Pesaran-Timmermann
+│   ├── architectures/      the models
+│   └── plotting.py
+└── tests/
 ```
 
-##  Running the Repository
+## Next steps
 
+Next-day direction is close to unforecastable from prices and monthly macro
+data alone, which is what the table shows. Directions that are more likely to
+add information:
 
-### 1. Setup Environment
-
-To create and activate the conda environment:
-
-```bash
-conda env create -f environment.yml
-conda activate env_comm
-```
-
-### 2. Install Dependencies(for non-Conda users)
-
-Before running any model, make sure to install all required Python packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Run  Models
-
-Use the command below to run any deep learning architecture with its corresponding configuration file:
-
-```bash
-python main.py --model tf_transformers --config config/con_transformers.json
-```
-
-
+- **Macro surprises with exact release times:** actual minus consensus for
+  CPI, payrolls and FOMC decisions from an economic calendar. These replace
+  the estimated publication lags and capture what markets react to.
+- **News text:** daily sentiment and topic features from financial news,
+  encoded with a pretrained language model (e.g. FinBERT), available before
+  the close.
+- **Better-suited targets:** next-week realised volatility or large-move
+  probability, where these inputs have more predictive power than for the
+  sign of tomorrow's return.
+- **Missing drivers:** real yields (10-year TIPS) for gold, futures term
+  structure, CFTC positioning, and China PMI for copper.
