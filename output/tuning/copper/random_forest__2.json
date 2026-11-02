@@ -1,0 +1,1 @@
+{"params": {"max_depth": 15, "min_samples_leaf": 5}, "rmse_ratio_by_year": {"2018": 1.0010813899760735, "2019": 0.9992056844516246}, "rmse_ratio": 1.000143537213849, "seconds": 65.11640357971191}

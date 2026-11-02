@@ -98,6 +98,42 @@ def pesaran_timmermann(y_true, y_pred) -> tuple[float, float]:
     return stat, float(1 - stats.norm.cdf(stat))
 
 
+def bh_adjust(p) -> np.ndarray:
+    """Benjamini-Hochberg adjusted p-values (q-values); NaNs are left as NaN."""
+    p = np.asarray(p, float)
+    q = np.full_like(p, np.nan)
+    ok = np.isfinite(p)
+    m = int(ok.sum())
+    if m == 0:
+        return q
+    pv = p[ok]
+    order = np.argsort(pv)
+    scaled = pv[order] * m / np.arange(1, m + 1)
+    adj = np.minimum(np.minimum.accumulate(scaled[::-1])[::-1], 1.0)
+    out = np.empty(m)
+    out[order] = adj
+    q[ok] = out
+    return q
+
+
+def holm_adjust(p) -> np.ndarray:
+    """Holm-Bonferroni adjusted p-values (family-wise error); NaNs are left as NaN."""
+    p = np.asarray(p, float)
+    q = np.full_like(p, np.nan)
+    ok = np.isfinite(p)
+    m = int(ok.sum())
+    if m == 0:
+        return q
+    pv = p[ok]
+    order = np.argsort(pv)
+    scaled = pv[order] * (m - np.arange(m))
+    adj = np.minimum(np.maximum.accumulate(scaled), 1.0)
+    out = np.empty(m)
+    out[order] = adj
+    q[ok] = out
+    return q
+
+
 def baseline_predictions(y_train, n_test: int) -> dict[str, np.ndarray]:
     """Naive forecasts for a test period of length ``n_test``."""
     return {

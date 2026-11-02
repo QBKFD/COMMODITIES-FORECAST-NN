@@ -34,6 +34,7 @@ NN_MODELS = {
     "gru_attention": "tf_tft_gru",
     "transformer": "tf_transformers",
 }
+CLIP = 5.0
 BENCHMARK_MODELS = ("xgboost", "random_forest", "svr")
 
 # Names used by the original scripts and configs.
@@ -142,8 +143,10 @@ def make_fold(
     sp = StandardScaler().fit(price_raw[: last_fit_row + 1])
     sm = StandardScaler().fit(macro_raw[: last_fit_row + 1])
     st = StandardScaler().fit(target_raw[lookback - 1 : last_fit_row + 1].reshape(-1, 1))
-    price = sp.transform(price_raw)
-    macro = sm.transform(macro_raw)
+    # Clip at 5 standard deviations so a handful of crisis days (March 2020)
+    # cannot dominate the fit.
+    price = np.clip(sp.transform(price_raw), -CLIP, CLIP)
+    macro = np.clip(sm.transform(macro_raw), -CLIP, CLIP)
     target = st.transform(target_raw.reshape(-1, 1)).ravel()
 
     Xp, y, ends = make_windows(price, target, lookback)

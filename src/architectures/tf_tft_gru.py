@@ -1,63 +1,39 @@
+"""GRU price encoder with attention over the macro inputs.
+
+The price stream is a recurrent encoder. The macro stream is projected to
+``d_model``, given positions and passed through a self-attention block. The
+price states then attend to the macro states (cross-attention with residual
+connection and feed-forward layer). The last day of the recurrent stream and
+of the cross-attention output are concatenated for the dense head.
+
+This is a recurrent model with attention over the macro inputs, not a
+Temporal Fusion Transformer: there are no variable-selection networks,
+gating or quantile outputs.
+"""
+
+from tensorflow.keras.layers import Concatenate, Dropout, Input, LayerNormalization, GRU
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import (
-    Input, GRU, Dropout, LayerNormalization,
-    Dense, GlobalAveragePooling1D, Concatenate, MultiHeadAttention
-)
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import Huber
+
+from src.architectures.blocks import LastStep, compile_model, cross_block, embed, encoder_block, head
+
 
 def build_model(config, lookback, n_price_features, n_macro_features):
-    H = config.get("horizon", 1)
-
-    # GRU units
-    gru_units_1 = config.get("units_price_1", 128)
-    gru_units_2 = config.get("units_price_2", 128)
-    gru_units_3 = config.get("units_price_3", 64)
-    macro_attn_dim = config.get("macro_attention_dim", 16)
-    macro_attn_heads = config.get("macro_attention_heads", 4)
-
-    dense_1_units = config.get("fused_dense_units_1", 64)
-    dense_2_units = config.get("fused_dense_units_2", 32)
-
-    dropout_price = config.get("dropout_price", 0.0)
-    dropout_macro = config.get("dropout_macro", 0.0)
-    dropout_fused = config.get("dropout_fused", 0.0)
-
-    learning_rate = config.get("learning_rate", 0.001)
-    loss_fn = config.get("loss", "huber")
+    units = config.get("units", 64)
+    d_model = config.get("d_model", 32)
+    heads = config.get("attention_heads", 4)
+    dropout = config.get("dropout", 0.2)
 
     price_input = Input(shape=(lookback, n_price_features), name="price_input")
     macro_input = Input(shape=(lookback, n_macro_features), name="macro_input")
 
-    gru_out = GRU(gru_units_1, return_sequences=True)(price_input)
-    gru_out = GRU(gru_units_2, return_sequences=True)(gru_out)
-    gru_out = Dropout(dropout_price)(gru_out)
-    gru_out = GRU(gru_units_3, return_sequences=True)(gru_out)
-    gru_out = LayerNormalization()(gru_out)
+    p = GRU(units, return_sequences=True)(price_input)
+    p = Dropout(dropout)(p)
+    p = GRU(d_model, return_sequences=True)(p)
+    p = LayerNormalization()(p)
 
-    attn_out = MultiHeadAttention(num_heads=macro_attn_heads, key_dim=macro_attn_dim)(macro_input, macro_input)
-    attn_out = Dropout(dropout_macro)(attn_out)
-    attn_out = LayerNormalization()(attn_out)
-    macro_encoded = Dense(64, activation="gelu")(attn_out)
+    m = encoder_block(embed(macro_input, d_model, lookback), heads, d_model // heads, 2 * d_model, dropout)
+    c = cross_block(p, m, heads, d_model // heads, 2 * d_model, dropout)
 
-    cross_attn = MultiHeadAttention(num_heads=macro_attn_heads, key_dim=macro_attn_dim)(gru_out, macro_encoded)
-    cross_attn = Dropout(dropout_macro)(cross_attn)
-    cross_attn = LayerNormalization()(cross_attn)
-
-    fused = Concatenate()([gru_out, cross_attn])
-    fused = Dense(dense_1_units, activation="gelu")(fused)
-    fused = Dropout(dropout_fused)(fused)
-    fused = Dense(dense_2_units, activation="gelu")(fused)
-
-    pooled = GlobalAveragePooling1D()(fused)
-    output = Dense(H, activation="linear", name="price_prediction")(pooled)
-
-    model = Model(inputs=[price_input, macro_input], outputs=output)
-
-    if loss_fn.lower() == "huber":
-        loss = Huber()
-    else:
-        loss = loss_fn  
-
-    model.compile(optimizer=Adam(learning_rate), loss=loss, metrics=["mae", "mse"])
-    return model
+    x = Dropout(dropout)(Concatenate()([LastStep()(p), LastStep()(c)]))
+    out = head(x, config.get("dense_units", 64), dropout, config.get("horizon", 1))
+    return compile_model(Model([price_input, macro_input], out), config)
