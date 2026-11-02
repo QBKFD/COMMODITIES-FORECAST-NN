@@ -134,6 +134,67 @@ def holm_adjust(p) -> np.ndarray:
     return q
 
 
+def dm_hac(loss_model, loss_bench, lags: int = 5) -> tuple[float, float]:
+    """DM test on any per-day loss with a Newey-West long-run variance.
+
+    Returns (statistic, one-sided p-value); a small p-value means the model
+    has the lower average loss. Used for volatility forecasts, whose loss
+    differences are autocorrelated.
+    """
+    d = np.asarray(loss_model, float) - np.asarray(loss_bench, float)
+    n = len(d)
+    if n < 10:
+        return float("nan"), float("nan")
+    dc = d - d.mean()
+    lrv = np.sum(dc**2) / n
+    for k in range(1, lags + 1):
+        lrv += 2 * (1 - k / (lags + 1)) * np.sum(dc[k:] * dc[:-k]) / n
+    if lrv <= 0:
+        return float("nan"), float("nan")
+    stat = float(d.mean() / np.sqrt(lrv / n))
+    return stat, float(stats.norm.cdf(stat))
+
+
+def block_bootstrap_indices(n: int, n_boot: int, block: int, rng: np.random.Generator) -> np.ndarray:
+    """Moving-block bootstrap index matrix, shape (n_boot, n)."""
+    n_blocks = int(np.ceil(n / block))
+    starts = rng.integers(0, n - block + 1, size=(n_boot, n_blocks))
+    idx = (starts[:, :, None] + np.arange(block)[None, None, :]).reshape(n_boot, -1)
+    return idx[:, :n]
+
+
+def model_confidence_set(
+    losses, rng: np.random.Generator, n_boot: int = 2000, block: int = 10
+) -> dict[str, float]:
+    """Model Confidence Set p-values (Hansen, Lunde and Nason 2011), T_max statistic.
+
+    ``losses`` is a DataFrame with one column of per-day losses per model.
+    Models are eliminated one at a time, worst first; a model's MCS p-value is
+    the largest elimination p-value up to its own. Models with a p-value above
+    alpha form the (1 - alpha) confidence set.
+    """
+    names = list(losses.columns)
+    L = np.asarray(losses, float)
+    idx = block_bootstrap_indices(len(L), n_boot, block, rng)
+    boot_means = L[idx].mean(axis=1)
+    means = L.mean(axis=0)
+    alive = list(range(len(names)))
+    pvals, running = {}, 0.0
+    while len(alive) > 1:
+        a = np.array(alive)
+        d = means[a] - means[a].mean()
+        d_boot = boot_means[:, a] - boot_means[:, a].mean(axis=1, keepdims=True)
+        se = np.sqrt(np.mean((d_boot - d) ** 2, axis=0))
+        t = d / se
+        t_boot = ((d_boot - d) / se).max(axis=1)
+        running = max(running, float(np.mean(t_boot >= t.max())))
+        worst = a[int(np.argmax(t))]
+        pvals[names[worst]] = running
+        alive.remove(worst)
+    pvals[names[alive[0]]] = 1.0
+    return pvals
+
+
 def baseline_predictions(y_train, n_test: int) -> dict[str, np.ndarray]:
     """Naive forecasts for a test period of length ``n_test``."""
     return {

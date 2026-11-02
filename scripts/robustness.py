@@ -41,7 +41,7 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.evaluation import bh_adjust, holm_adjust  # noqa: E402
+from src.evaluation import bh_adjust, holm_adjust, model_confidence_set  # noqa: E402
 
 MODELS = [
     "stacked_lstm", "stacked_gru", "lstm_attention", "gru_attention", "transformer",
@@ -86,37 +86,8 @@ def multiple_testing(summary: pd.DataFrame) -> pd.DataFrame:
 # 2. Model Confidence Set -------------------------------------------------------
 
 
-def block_indices(n: int, rng: np.random.Generator) -> np.ndarray:
-    """Moving-block bootstrap index matrix, shape (N_BOOT, n)."""
-    n_blocks = int(np.ceil(n / BLOCK))
-    starts = rng.integers(0, n - BLOCK + 1, size=(N_BOOT, n_blocks))
-    idx = (starts[:, :, None] + np.arange(BLOCK)[None, None, :]).reshape(N_BOOT, -1)
-    return idx[:, :n]
-
-
-def model_confidence_set(losses: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
-    """Hansen-Lunde-Nason MCS with the T_max statistic. Returns name, MCS p-value."""
-    names = list(losses.columns)
-    L = losses.to_numpy()
-    n = len(L)
-    idx = block_indices(n, rng)
-    boot_means = L[idx].mean(axis=1)  # (N_BOOT, m)
-    means = L.mean(axis=0)
-    alive = list(range(len(names)))
-    pvals, running = {}, 0.0
-    while len(alive) > 1:
-        a = np.array(alive)
-        d = means[a] - means[a].mean()
-        d_boot = boot_means[:, a] - boot_means[:, a].mean(axis=1, keepdims=True)
-        se = np.sqrt(np.mean((d_boot - d) ** 2, axis=0))
-        t = d / se
-        t_boot = ((d_boot - d) / se).max(axis=1)
-        p = float(np.mean(t_boot >= t.max()))
-        running = max(running, p)
-        worst = a[int(np.argmax(t))]
-        pvals[names[worst]] = running
-        alive.remove(worst)
-    pvals[names[alive[0]]] = 1.0
+def mcs_table(losses: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+    pvals = model_confidence_set(losses, rng, n_boot=N_BOOT, block=BLOCK)
     out = pd.DataFrame({"model": list(pvals), "mcs_p": list(pvals.values())})
     out["in_mcs_90"] = out.mcs_p > ALPHA
     out["mse_bp2"] = [float(losses[m].mean() * 1e8) for m in out.model]
@@ -131,7 +102,7 @@ def mcs_all(ens: dict[str, pd.DataFrame]) -> pd.DataFrame:
         preds["zero"] = pd.Series(0.0, index=df.index)
         preds["mean"] = df.pred_mean
         losses = pd.DataFrame({k: (df.y_true - v) ** 2 for k, v in preds.items()})
-        res = model_confidence_set(losses, rng)
+        res = mcs_table(losses, rng)
         res.insert(0, "commodity", c)
         rows.append(res.sort_values("mcs_p", ascending=False))
     return pd.concat(rows, ignore_index=True)
