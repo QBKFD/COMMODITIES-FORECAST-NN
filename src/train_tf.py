@@ -87,8 +87,17 @@ class Fold:
     target_scaler: StandardScaler
 
 
-def prepare_frame(df: pd.DataFrame, price_features: list[str], macro_features: list[str]) -> pd.DataFrame:
-    """Keep the needed columns, carry the last known value over gaps, drop the warm-up."""
+def prepare_frame(
+    df: pd.DataFrame,
+    price_features: list[str],
+    macro_features: list[str],
+    train_start: str | None = None,
+) -> pd.DataFrame:
+    """Keep the needed columns, carry the last known value over gaps, drop the warm-up.
+
+    ``train_start`` drops all earlier rows (used when a feature, such as the
+    event calendar, only exists from a later date).
+    """
     missing = [c for c in [*price_features, *macro_features] if c not in df]
     if missing:
         raise KeyError(f"Columns not in the data: {missing}")
@@ -96,6 +105,8 @@ def prepare_frame(df: pd.DataFrame, price_features: list[str], macro_features: l
     out = df[cols].ffill()  # forward fill only: never uses later values
     out[TARGET] = df[TARGET]
     out = out.dropna(subset=cols)
+    if train_start is not None:
+        out = out[out.index >= pd.Timestamp(train_start)]
     return out.iloc[:-1] if np.isnan(out[TARGET].iloc[-1]) else out
 
 
@@ -220,7 +231,7 @@ def walk_forward(
     if config.get("horizon", 1) != 1:
         raise ValueError("Only one-day-ahead forecasts (horizon 1) are supported by this pipeline")
 
-    frame = prepare_frame(df, price_features, macro_features)
+    frame = prepare_frame(df, price_features, macro_features, config.get("train_start"))
     rows, kept = [], []
     for year in years:
         fold = make_fold(frame, price_features, macro_features, lookback, year, config.get("val_fraction", 0.15))

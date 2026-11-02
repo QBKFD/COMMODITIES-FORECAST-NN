@@ -5,3 +5,6 @@ __pycache__/
 output/runs/
 output/shap/
 *.tmp
+
+# Raw economic-calendar exports (not redistributable)
+data/calendar_raw/

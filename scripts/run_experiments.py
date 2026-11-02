@@ -3,6 +3,10 @@
     python scripts/run_experiments.py                       # everything (hours on a CPU)
     python scripts/run_experiments.py --commodities gold --models transformer xgboost --seeds 0
 
+Options for the event-calendar ablation (see scripts/run_event_ablation.py):
+``--train-start`` drops data before a date, ``--events`` adds the release
+surprises and scheduled-event flags from ``src/events.py`` to the macro inputs.
+
 One CSV per (commodity, model, seed) is written to
 ``output/predictions/<commodity>/<model>_seed<k>.csv``. Existing files are
 skipped, so an interrupted run can simply be started again. Every job runs in
@@ -46,14 +50,30 @@ def job_path(out: Path, commodity: str, model: str, seed: int) -> Path:
     return out / commodity / f"{model}_seed{seed}.csv"
 
 
-def run_job(commodity: str, model: str, seed: int, years: list[int], out: Path) -> int:
+def run_job(
+    commodity: str,
+    model: str,
+    seed: int,
+    years: list[int],
+    out: Path,
+    train_start: str | None = None,
+    events: bool = False,
+) -> int:
     warnings.filterwarnings("ignore")
     import tensorflow as tf
 
     tf.get_logger().setLevel("ERROR")
     config = json.loads((ROOT / "config" / MODEL_CONFIGS[model]).read_text())
+    df = load_commodity(commodity)
+    if train_start:
+        config["train_start"] = train_start
+    if events:
+        from src.events import EVENT_COLUMNS, add_event_features
+
+        df = add_event_features(df, commodity)
+        config["macro_features"] = [*config["macro_features"], *EVENT_COLUMNS]
     start = time.time()
-    preds, _ = walk_forward(load_commodity(commodity), model, config, seed=seed, years=years)
+    preds, _ = walk_forward(df, model, config, seed=seed, years=years)
     path = job_path(out, commodity, model, seed)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
@@ -70,12 +90,16 @@ def main() -> int:
     p.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
     p.add_argument("--years", nargs="+", type=int, default=[2020, 2021, 2022, 2023, 2024])
     p.add_argument("--out", type=Path, default=ROOT / "output" / "predictions")
+    p.add_argument("--train-start", help="drop data before this date, e.g. 2010-03-01")
+    p.add_argument("--events", action="store_true", help="add the economic-calendar features")
     p.add_argument("--in-process", action="store_true", help=argparse.SUPPRESS)  # used for the child jobs
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     args = p.parse_args()
 
     if args.in_process:
-        return run_job(args.commodities[0], args.models[0], args.seeds[0], args.years, args.out)
+        return run_job(
+            args.commodities[0], args.models[0], args.seeds[0], args.years, args.out, args.train_start, args.events
+        )
 
     failed = []
     for commodity in args.commodities:
@@ -87,6 +111,10 @@ def main() -> int:
                     continue
                 cmd = [sys.executable, __file__, "--in-process", "--commodities", commodity, "--models", model,
                        "--seeds", str(seed), "--out", str(args.out), "--years", *map(str, args.years)]
+                if args.train_start:
+                    cmd += ["--train-start", args.train_start]
+                if args.events:
+                    cmd.append("--events")
                 if subprocess.run(cmd).returncode != 0:
                     logging.error("%-7s %-15s seed %d: failed", commodity, model, seed)
                     failed.append((commodity, model, seed))

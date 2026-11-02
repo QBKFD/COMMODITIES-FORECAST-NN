@@ -137,6 +137,7 @@ python scripts/summarise.py
 ```
 ├── config/                 hyperparameters and feature lists per model
 ├── data/                   daily data for gold, silver, copper (2000-2024)
+│   └── events/             release times and standardised surprises (derived)
 ├── main.py                 train and evaluate one model
 ├── notebooks/              EDA, data preparation, NeuralForecast models
 ├── output/
@@ -144,15 +145,59 @@ python scripts/summarise.py
 │   ├── results/            summary.csv, by_year.csv
 │   ├── figures/
 │   └── original_run/       output of the first version, for comparison
-├── scripts/                run_experiments.py, summarise.py
+├── scripts/                run_experiments.py, summarise.py, event ablation scripts
 ├── src/
 │   ├── data.py             loading, release-date alignment, target
 │   ├── train_tf.py         walk-forward training
 │   ├── evaluation.py       metrics, baselines, Diebold-Mariano, Pesaran-Timmermann
+│   ├── events.py           economic-calendar surprises and release flags
 │   ├── architectures/      the models
 │   └── plotting.py
 └── tests/
 ```
+
+## Economic-calendar features
+
+`src/events.py` adds release-level information from an economic calendar
+(Forex Factory exports, 2010-2024) to the macro inputs:
+
+| column | meaning |
+|---|---|
+| `z_cpi`, `z_nfp`, `z_fed_rate`, `z_usd_other`, `z_china_pmi` | surprise (actual - consensus) of releases that became public since the previous settlement, divided by the standard deviation of *earlier* surprises of the same release; 0 on days without one |
+| `next_cpi`, `next_nfp`, `next_fomc` | 1 if a scheduled CPI, payroll or FOMC release falls between today's and tomorrow's settlement, i.e. inside the return being forecast |
+
+Timing is what makes or breaks features like these, so:
+
+- The exports store times in the timezone of the browser that scraped them
+  (UTC+8 up to 2023, Brussels from 2024). `check_timezones` converts them and
+  confirms that every payroll release lands at 8:30 New York and every
+  scheduled FOMC statement between 12:00 and 14:30.
+- Releases are assigned to trading days by the COMEX settlement time (13:30
+  New York for gold and silver, 13:00 for copper), not by calendar date. An
+  FOMC statement at 14:00 is after the gold settlement, so it only enters the
+  next day's inputs.
+- Only release *dates* are used ahead of time, and those are published
+  months in advance. The two unscheduled cuts of March 2020 are not flagged.
+- Chinese PMIs (released around 9:00 Beijing, the evening before in New York)
+  are included for copper's sake; all models see the same columns.
+
+The raw calendar files are not redistributed (`data/calendar_raw/` is ignored
+by git). `data/events/event_surprises.csv` holds only what the features need:
+release name, UTC time and standardised surprise.
+
+```bash
+# put forex_factory_calendar_<year>.csv into data/calendar_raw/, then
+python scripts/build_event_features.py    # timezone check + data/events/event_surprises.csv
+python scripts/run_event_ablation.py      # each model with and without the event columns
+python scripts/compare_event_ablation.py  # output/results/event_ablation.csv
+```
+
+The ablation trains both arms on data from March 2010 onward, so they differ only
+in the event columns, and compares them on the same 2020-2024 days: RMSE
+change, a paired Diebold-Mariano test, the change on days with a scheduled
+release, and directional accuracy. By default it runs GRU + attention,
+Transformer, XGBoost and random forest with three seeds on all three metals
+(72 jobs; NN jobs take most of the time).
 
 ## Next steps
 
@@ -160,9 +205,8 @@ Next-day direction is close to unforecastable from prices and monthly macro
 data alone, which is what the table shows. Directions that are more likely to
 add information:
 
-- **Macro surprises with exact release times:** actual minus consensus for
-  CPI, payrolls and FOMC decisions from an economic calendar. These replace
-  the estimated publication lags and capture what markets react to.
+- **Macro surprises with exact release times:** implemented above as an
+  ablation; results to follow.
 - **News text:** daily sentiment and topic features from financial news,
   encoded with a pretrained language model (e.g. FinBERT), available before
   the close.
