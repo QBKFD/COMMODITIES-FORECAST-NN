@@ -50,21 +50,6 @@ little left to work with. What these inputs do predict is *how much* prices
 move, not which way.
 
 ## Thesis and after
-
-The thesis compared the models with the original pipeline, whose output is
-kept in [`output/original_run/`](output/original_run). After submitting I
-found that it used macro data before it was published, fitted scalers on the
-test years and forecast two days ahead instead of one, among other things
-(see [What changed since the thesis](#what-changed-since-the-thesis)).
-Everything below uses the corrected pipeline and was done after the thesis:
-
-| Step | Where |
-|---|---|
-| Fix look-ahead and evaluation, add naive baselines, significance tests and unit tests | PR #2, first corrected results in [`output/fixed_evaluation/`](output/fixed_evaluation) |
-| Economic-calendar surprise features and the with/without-events ablation | PR #3 |
-| Stationary inputs, revised architectures, tuning on validation years, full rerun, event study, volatility, robustness checks | PR #4 |
-| Volatility models: HAR, GARCH, LSTM, Transformer and pretrained foundation models, designed before running | PR #5 |
-
 ## 1. Macro surprises move metals on the release day
 
 For each release the surprise is the actual value minus the consensus
