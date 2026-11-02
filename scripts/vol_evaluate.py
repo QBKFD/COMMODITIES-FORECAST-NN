@@ -27,8 +27,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.evaluation import dm_hac, holm_adjust, model_confidence_set  # noqa: E402
-from src.volatility import qlike  # noqa: E402
+from cfnn.evaluation import dm_hac, holm_adjust, model_confidence_set  # noqa: E402
+from cfnn.volatility import qlike  # noqa: E402
 
 ORDER = [
     "hist_mean", "ewma", "garch", "gjr_garch", "har", "har_x", "lstm", "transformer",

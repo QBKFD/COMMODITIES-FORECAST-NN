@@ -39,7 +39,7 @@ def main() -> int:
         tf.config.threading.set_intra_op_parallelism_threads(args.threads)
         tf.config.threading.set_inter_op_parallelism_threads(args.threads)
 
-    from src.volatility import benchmark_forecasts, load, network_forecasts
+    from cfnn.volatility import benchmark_forecasts, load, network_forecasts
 
     for c in args.commodities:
         d = load(c)

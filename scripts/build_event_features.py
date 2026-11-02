@@ -5,7 +5,7 @@
 ``--raw`` must hold the yearly ``forex_factory_calendar_<year>.csv`` files.
 They are not part of the repository (data/calendar_raw/ is ignored by git);
 the output only contains event names, UTC release times and standardised
-surprises. The script stops if the timezone check in ``src/events.py`` fails.
+surprises. The script stops if the timezone check in ``cfnn/events.py`` fails.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.events import EVENTS_FILE, check_timezones, event_surprises, read_raw_calendar  # noqa: E402
+from cfnn.events import EVENTS_FILE, check_timezones, event_surprises, read_raw_calendar  # noqa: E402
 
 
 def main() -> int:

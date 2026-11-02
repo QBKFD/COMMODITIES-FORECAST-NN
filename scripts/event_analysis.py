@@ -30,11 +30,11 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.data import COMMODITIES, load_commodity  # noqa: E402
+from cfnn.data import COMMODITIES, load_commodity  # noqa: E402
 from scipy.stats import norm  # noqa: E402
 
-from src.evaluation import bh_adjust, diebold_mariano  # noqa: E402
-from src.events import FLAG_GROUPS, SURPRISE_GROUPS, add_event_features  # noqa: E402
+from cfnn.evaluation import bh_adjust, diebold_mariano  # noqa: E402
+from cfnn.events import FLAG_GROUPS, SURPRISE_GROUPS, add_event_features  # noqa: E402
 
 START = "2010-03-01"
 MIN_RELEASE_DAYS = 20

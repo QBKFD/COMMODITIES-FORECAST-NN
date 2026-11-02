@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.features import add_features
+from cfnn.features import add_features
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 

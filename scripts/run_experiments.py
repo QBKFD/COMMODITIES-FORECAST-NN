@@ -5,7 +5,7 @@
 
 Options for the event-calendar ablation (see scripts/run_event_ablation.py):
 ``--train-start`` drops data before a date, ``--events`` adds the release
-surprises and scheduled-event flags from ``src/events.py`` to the macro inputs.
+surprises and scheduled-event flags from ``cfnn/events.py`` to the macro inputs.
 
 One CSV per (commodity, model, seed) is written to
 ``output/predictions/<commodity>/<model>_seed<k>.csv``. Existing files are
@@ -29,8 +29,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.data import COMMODITIES, load_commodity  # noqa: E402
-from src.train_tf import walk_forward  # noqa: E402
+from cfnn.data import COMMODITIES, load_commodity  # noqa: E402
+from cfnn.train_tf import walk_forward  # noqa: E402
 
 # Model -> config file. Deterministic models need only one seed.
 MODEL_CONFIGS = {
@@ -68,7 +68,7 @@ def run_job(
     if train_start:
         config["train_start"] = train_start
     if events:
-        from src.events import EVENT_COLUMNS, add_event_features
+        from cfnn.events import EVENT_COLUMNS, add_event_features
 
         df = add_event_features(df, commodity)
         config["macro_features"] = [*config["macro_features"], *EVENT_COLUMNS]

@@ -320,7 +320,7 @@ worse than they were.
   value at the start of its period, so March CPI appeared on 1 March although
   it was released mid-April, and quarterly GDP up to four months early. Each
   monthly and quarterly series is now shifted by its usual publication lag
-  ([`src/data.py`](src/data.py)). S&P 500, dollar index, VIX and the
+  ([`cfnn/data.py`](cfnn/data.py)). S&P 500, dollar index, VIX and the
   geopolitical risk index are lagged by one trading day, since US markets
   close after the metal futures settle.
 - **The forecast was two days ahead.** The target column already held the
@@ -341,7 +341,7 @@ worse than they were.
 
 ### Revised pipeline (PR #4)
 
-- **Stationary inputs** ([`src/features.py`](src/features.py)). Price levels,
+- **Stationary inputs** ([`cfnn/features.py`](cfnn/features.py)). Price levels,
   moving averages and dollar-valued indicators are replaced by returns,
   ratios to the current price and distances from moving averages, and macro
   levels by year-on-year changes. With levels, gold near 2,700 in the test
@@ -352,7 +352,7 @@ worse than they were.
 - **The forecast is read from the last day of the window** instead of an
   average over all 30 days, and the attention blocks have residual
   connections and layer normalisation
-  ([`src/architectures/blocks.py`](src/architectures/blocks.py)).
+  ([`cfnn/architectures/blocks.py`](cfnn/architectures/blocks.py)).
 - **AdamW with weight decay and gradient clipping, and a Huber loss**, since
   daily returns have fat tails.
 - **Hyperparameters chosen on 2018 and 2019 only** ([`scripts/tune.py`](scripts/tune.py)),
@@ -409,7 +409,7 @@ this rerun.
 
 ## Economic-calendar features
 
-`src/events.py` adds release-level information from an economic calendar
+`cfnn/events.py` adds release-level information from an economic calendar
 (Forex Factory exports, 2010-2024) to the macro inputs:
 
 | column | meaning |
@@ -488,7 +488,7 @@ models, is in `environment.yml` (`conda env create -f environment.yml`).
 │   ├── fixed_evaluation/   first corrected run (PR #2), for comparison
 │   └── original_run/       output of the thesis version
 ├── scripts/                experiments, summaries, event study, robustness, tuning
-├── src/
+├── cfnn/
 │   ├── data.py             loading, release-date alignment, target
 │   ├── features.py         stationary inputs
 │   ├── train_tf.py         walk-forward training

@@ -1,4 +1,4 @@
-"""LSTM price encoder with attention over the macro inputs.
+"""GRU price encoder with attention over the macro inputs.
 
 The price stream is a recurrent encoder. The macro stream is projected to
 ``d_model``, given positions and passed through a self-attention block. The
@@ -11,10 +11,10 @@ Temporal Fusion Transformer: there are no variable-selection networks,
 gating or quantile outputs.
 """
 
-from tensorflow.keras.layers import Concatenate, Dropout, Input, LayerNormalization, LSTM
+from tensorflow.keras.layers import Concatenate, Dropout, Input, LayerNormalization, GRU
 from tensorflow.keras.models import Model
 
-from src.architectures.blocks import LastStep, compile_model, cross_block, embed, encoder_block, head
+from cfnn.architectures.blocks import LastStep, compile_model, cross_block, embed, encoder_block, head
 
 
 def build_model(config, lookback, n_price_features, n_macro_features):
@@ -26,9 +26,9 @@ def build_model(config, lookback, n_price_features, n_macro_features):
     price_input = Input(shape=(lookback, n_price_features), name="price_input")
     macro_input = Input(shape=(lookback, n_macro_features), name="macro_input")
 
-    p = LSTM(units, return_sequences=True)(price_input)
+    p = GRU(units, return_sequences=True)(price_input)
     p = Dropout(dropout)(p)
-    p = LSTM(d_model, return_sequences=True)(p)
+    p = GRU(d_model, return_sequences=True)(p)
     p = LayerNormalization()(p)
 
     m = encoder_block(embed(macro_input, d_model, lookback), heads, d_model // heads, 2 * d_model, dropout)

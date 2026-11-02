@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.data import RELEASE_LAG_DAYS, apply_release_lag, load_commodity, make_windows
+from cfnn.data import RELEASE_LAG_DAYS, apply_release_lag, load_commodity, make_windows
 
 
 def test_release_lag_delays_monthly_values():
@@ -61,13 +61,13 @@ def test_stationary_features_have_no_look_ahead():
     import numpy as np
     import pandas as pd
 
-    from src.data import load_commodity
-    from src.features import MACRO_FEATURES, PRICE_FEATURES
+    from cfnn.data import load_commodity
+    from cfnn.features import MACRO_FEATURES, PRICE_FEATURES
 
     df = load_commodity("gold")
     cols = PRICE_FEATURES + MACRO_FEATURES
     cut = df.index[3000]
-    from src.features import add_features
+    from cfnn.features import add_features
 
     # add_features recomputes every derived column from the raw ones
     full = add_features(df)
@@ -78,8 +78,8 @@ def test_stationary_features_have_no_look_ahead():
 
 def test_features_are_stable_across_decades():
     """Price-level columns drift with the price; the model inputs should not."""
-    from src.data import load_commodity
-    from src.features import PRICE_FEATURES
+    from cfnn.data import load_commodity
+    from cfnn.features import PRICE_FEATURES
 
     f = load_commodity("gold")[PRICE_FEATURES].dropna()
     train, test = f.loc[:"2019"], f.loc["2024"]

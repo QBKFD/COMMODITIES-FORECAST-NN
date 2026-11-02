@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.events import EVENTS_FILE  # noqa: E402
+from cfnn.events import EVENTS_FILE  # noqa: E402
 
 DEFAULT_MODELS = ["gru_attention", "transformer", "xgboost", "random_forest"]
 TRAIN_START = "2010-03-01"

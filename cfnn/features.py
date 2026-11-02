@@ -9,7 +9,7 @@ the same thing in every year: returns, ratios to the current price, distances
 from moving averages, and year-on-year changes.
 
 Everything uses data up to and including the forecast day only. The release
-lags of ``src/data.py`` are applied first, so macro columns here are the
+lags of ``cfnn/data.py`` are applied first, so macro columns here are the
 already lagged ones.
 """
 

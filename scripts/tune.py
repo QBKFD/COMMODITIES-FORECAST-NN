@@ -32,9 +32,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.data import COMMODITIES, load_commodity  # noqa: E402
-from src.evaluation import forecast_metrics  # noqa: E402
-from src.train_tf import walk_forward  # noqa: E402
+from cfnn.data import COMMODITIES, load_commodity  # noqa: E402
+from cfnn.evaluation import forecast_metrics  # noqa: E402
+from cfnn.train_tf import walk_forward  # noqa: E402
 
 VALIDATION_YEARS = [2018, 2019]
 CONFIG_FILES = {

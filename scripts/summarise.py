@@ -25,7 +25,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.evaluation import diebold_mariano, forecast_metrics, pesaran_timmermann  # noqa: E402
+from cfnn.evaluation import diebold_mariano, forecast_metrics, pesaran_timmermann  # noqa: E402
 
 MODEL_ORDER = [
     "stacked_lstm", "stacked_gru", "lstm_attention", "gru_attention", "transformer",
@@ -133,7 +133,7 @@ def main() -> int:
     pooled.to_csv(args.out / "summary.csv", index=False)
     yearly.to_csv(args.out / "by_year.csv", index=False)
 
-    from src.plotting import da_dotplot, rmse_dotplot
+    from cfnn.plotting import da_dotplot, rmse_dotplot
 
     rmse_dotplot(pooled, preds, args.figures / "rmse_vs_zero.png")
     da_dotplot(pooled, args.figures / "directional_accuracy.png")

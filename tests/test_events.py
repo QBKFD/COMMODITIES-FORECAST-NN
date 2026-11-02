@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import events
-from src.train_tf import prepare_frame
+from cfnn import events
+from cfnn.train_tf import prepare_frame
 
 
 def write_calendar(tmp_path, year, rows):

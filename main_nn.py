@@ -1,6 +1,6 @@
 import argparse
 import json
-from src.train_nn import train_nn_model
+from cfnn.train_nn import train_nn_model
 
 def main():
     parser = argparse.ArgumentParser(description="Train NeuralForecast NN Model")

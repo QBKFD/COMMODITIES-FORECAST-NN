@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from src.data import TARGET, make_windows
+from cfnn.data import TARGET, make_windows
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
@@ -174,7 +174,7 @@ def _fit_nn(name: str, config: dict, fold: Fold, verbose: int = 0):
 
     from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-    module = importlib.import_module(f"src.architectures.{NN_MODELS[name]}")
+    module = importlib.import_module(f"cfnn.architectures.{NN_MODELS[name]}")
     lookback = fold.Xp_fit.shape[1]
     model = module.build_model(config, lookback, fold.Xp_fit.shape[2], fold.Xm_fit.shape[2])
     callbacks = [
@@ -196,7 +196,7 @@ def _fit_nn(name: str, config: dict, fold: Fold, verbose: int = 0):
 
 
 def _fit_benchmark(name: str, config: dict, fold: Fold, seed: int):
-    from src.architectures import benchmarks
+    from cfnn.architectures import benchmarks
 
     cfg = {**config, "benchmark_type": name, "random_state": seed}
     model = benchmarks.build_model(cfg)

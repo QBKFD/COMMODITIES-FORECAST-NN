@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.data import TARGET
-from src.train_tf import BENCHMARK_MODELS, NN_MODELS, make_fold, prepare_frame, walk_forward
+from cfnn.data import TARGET
+from cfnn.train_tf import BENCHMARK_MODELS, NN_MODELS, make_fold, prepare_frame, walk_forward
 
 PRICE = ["p1", "p2"]
 MACRO = ["m1"]
@@ -56,7 +56,7 @@ def test_every_model_runs(frame, model):
 
 
 def test_old_model_names_still_work(frame):
-    from src.train_tf import resolve_model_name
+    from cfnn.train_tf import resolve_model_name
 
     assert resolve_model_name("tf_hybrid_lstm", {}) == "lstm_attention"
     assert resolve_model_name("benchmarks", {"benchmark_type": "svr"}) == "svr"
