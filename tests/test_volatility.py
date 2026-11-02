@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.evaluation import dm_hac, model_confidence_set
-from src.volatility import benchmark_forecasts, ewma, load, qlike, train_test_masks
+from cfnn.evaluation import dm_hac, model_confidence_set
+from cfnn.volatility import benchmark_forecasts, ewma, load, qlike, train_test_masks
 
 
 def test_qlike_is_minimised_at_the_true_variance():

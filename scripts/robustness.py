@@ -41,7 +41,7 @@ from scipy import stats
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.evaluation import bh_adjust, holm_adjust, model_confidence_set  # noqa: E402
+from cfnn.evaluation import bh_adjust, holm_adjust, model_confidence_set  # noqa: E402
 
 MODELS = [
     "stacked_lstm", "stacked_gru", "lstm_attention", "gru_attention", "transformer",

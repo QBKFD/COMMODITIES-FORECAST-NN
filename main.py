@@ -16,9 +16,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.data import COMMODITIES, load_commodity
-from src.evaluation import diebold_mariano, forecast_metrics, pesaran_timmermann
-from src.train_tf import resolve_model_name, walk_forward
+from cfnn.data import COMMODITIES, load_commodity
+from cfnn.evaluation import diebold_mariano, forecast_metrics, pesaran_timmermann
+from cfnn.train_tf import resolve_model_name, walk_forward
 
 
 def commodity_from_config(config: dict) -> str:
@@ -83,7 +83,7 @@ def main():
     print(f"\nDaily forecasts saved to {out_file}")
 
     if args.shap:
-        from src.shap_analysis import run_shap_analysis, summarize_shap_results
+        from cfnn.shap_analysis import run_shap_analysis, summarize_shap_results
 
         all_shap, results = [], []
         for net, fold in kept:

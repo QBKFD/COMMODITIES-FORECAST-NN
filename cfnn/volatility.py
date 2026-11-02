@@ -13,8 +13,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from src.data import load_commodity, make_windows
-from src.events import add_event_features
+from cfnn.data import load_commodity, make_windows
+from cfnn.events import add_event_features
 
 START = "2010-03-01"
 TEST_YEARS = [2020, 2021, 2022, 2023, 2024]
@@ -142,7 +142,7 @@ def build_network(kind: str, n_features: int):
     from tensorflow.keras import Input, Model
     from tensorflow.keras.layers import LSTM, Dense, Dropout
 
-    from src.architectures.blocks import LastStep, embed, encoder_block
+    from cfnn.architectures.blocks import LastStep, embed, encoder_block
 
     inp = Input(shape=(LOOKBACK, n_features))
     if kind == "lstm":

@@ -28,8 +28,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.data import load_commodity  # noqa: E402
-from src.volatility import FLOOR, TEST_YEARS, load, train_test_masks  # noqa: E402
+from cfnn.data import load_commodity  # noqa: E402
+from cfnn.volatility import FLOOR, TEST_YEARS, load, train_test_masks  # noqa: E402
 
 CONTEXT = 512
 COMMODITIES = ["gold", "silver", "copper"]

@@ -25,9 +25,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.data import load_commodity  # noqa: E402
-from src.evaluation import diebold_mariano, directional_accuracy  # noqa: E402
-from src.events import FLAG_GROUPS, add_event_features  # noqa: E402
+from cfnn.data import load_commodity  # noqa: E402
+from cfnn.evaluation import diebold_mariano, directional_accuracy  # noqa: E402
+from cfnn.events import FLAG_GROUPS, add_event_features  # noqa: E402
 
 
 def seed_mean(arm_dir: Path) -> pd.DataFrame:

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.evaluation import (
+from cfnn.evaluation import (
     bh_adjust,
     diebold_mariano,
     directional_accuracy,

@@ -14,7 +14,7 @@ gating or quantile outputs.
 from tensorflow.keras.layers import Concatenate, Dropout, Input, LayerNormalization, LSTM
 from tensorflow.keras.models import Model
 
-from src.architectures.blocks import LastStep, compile_model, cross_block, embed, encoder_block, head
+from cfnn.architectures.blocks import LastStep, compile_model, cross_block, embed, encoder_block, head
 
 
 def build_model(config, lookback, n_price_features, n_macro_features):
