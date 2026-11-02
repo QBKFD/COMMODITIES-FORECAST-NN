@@ -14,9 +14,7 @@ Recurrent networks, attention-based hybrids and a Transformer are compared
 with XGBoost, random forest and SVR, and with the naive forecasts every
 daily-return model has to beat.
 
-After the thesis I rebuilt the evaluation, removed look-ahead bias that made
-the original results look better than they were, and added an
-economic-calendar study to understand why the forecasts fail.
+
 
 ## In short
 
